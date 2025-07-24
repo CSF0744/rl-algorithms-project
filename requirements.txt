@@ -1,0 +1,10 @@
+numpy
+torch
+gym
+matplotlib
+pandas
+scikit-learn
+seaborn
+tensorboard
+opencv-python
+pytest
