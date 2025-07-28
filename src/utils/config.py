@@ -18,6 +18,9 @@ config = {
         'eps_clip':0.2 # PPO clip parameter
     },
     "a2c" : {
-        
+        'lr':0.001,  # Learning rate
+        'gamma':0.99,  # Discount factor
+        'batch_size':64,  # Batch size for training
+        'num_episodes':1000,  # Number of episodes to train
     }
 }

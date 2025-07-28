@@ -193,7 +193,7 @@ class DQN_Agent():
                 avg_reward /= 100
                 self.collect_performance(episode, avg_reward)
                 
-                print(f"\nDQN Episode {episode + 1}/{self.num_episodes}, Average Reward: {avg_reward}, Epsilon: {self.epsilon:.4f}")
+                tqdm.write(f"\nDQN Episode {episode + 1}/{self.num_episodes}, Average Reward: {avg_reward}, Epsilon: {self.epsilon:.4f}")
                 avg_reward = 0
         
         # Return success train status and final total reward        

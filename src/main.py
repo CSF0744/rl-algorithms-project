@@ -63,7 +63,7 @@ def main():
     elif args.algo == 'ppo':
         agent = PPO_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
     elif args.algo == 'a2c':
-        print('\nAgent not ready yet!')
+        agent = A2C_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
     else:
         print('\nAgent not exist!')
     # train agent 

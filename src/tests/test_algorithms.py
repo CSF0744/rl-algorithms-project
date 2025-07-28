@@ -88,7 +88,7 @@ class TestAlgorithms(unittest.TestCase):
         self.assertTrue(result['success'])
         # self.assertGreater(result['reward'], 0)
 
-    def test_a3c_training(self):
+    def test_a2c_training(self):
         result = self.a2c.train(self.env)
         self.assertTrue(result['success'])
         # self.assertGreater(result['reward'], 0)

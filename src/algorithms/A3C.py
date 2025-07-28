@@ -51,7 +51,7 @@ class A2C_Agent:
         
         self.logger = []
 
-    def select_action(self, state):
+    def action_selection(self, state):
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         probs, value = self.model(state)
         dist = torch.distributions.Categorical(probs)
@@ -72,7 +72,7 @@ class A2C_Agent:
             total_reward = 0
 
             while not done:
-                action, log_prob, value = self.select_action(state)
+                action, log_prob, value = self.action_selection(state)
                 next_state, reward, terminated, truncated, info = env.step(action)
                 done = terminated or truncated
                 log_probs.append(log_prob)
@@ -108,7 +108,8 @@ class A2C_Agent:
             if episode % 100 == 0:
                 avg_reward /= 100
                 self.collect_performance(episode, avg_reward)
-                print(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {total_reward:.2f}")
+                tqdm.write(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {total_reward:.2f}")
+                # print(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {total_reward:.2f}")
                 avg_reward = 0
         
         return {

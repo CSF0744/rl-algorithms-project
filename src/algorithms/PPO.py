@@ -191,6 +191,7 @@ class PPO_Agent():
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+                
     def collect_performance(self, episode: int, avg_reward: float):
         self.logger.append(avg_reward)
         
@@ -223,7 +224,7 @@ class PPO_Agent():
             if episode % 100 == 0:
                 avg_reward /= 100
                 self.collect_performance(episode, avg_reward)
-                print(f"\nPPO Episode {episode+1}/{self.num_episodes}, Average Reward: {avg_reward}")
+                tqdm.write(f"\nPPO Episode {episode+1}/{self.num_episodes}, Average Reward: {avg_reward}")
                 avg_reward = 0
         
         return {
