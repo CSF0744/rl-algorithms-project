@@ -79,18 +79,24 @@ class TestAlgorithms(unittest.TestCase):
         )
         
     def test_dqn_training(self):
+        print('\n Testing DQN!')
         result = self.dqn.train(self.env)
         self.assertTrue(result['success'])
+        print("\n DQN Test Pass!")
         # self.assertGreater(result['reward'], 0) # reward may not be positive
 
     def test_ppo_training(self):
+        print('\n Testing PPO!')
         result = self.ppo.train(self.env)
         self.assertTrue(result['success'])
+        print("\n PPO Test Pass!")
         # self.assertGreater(result['reward'], 0)
 
     def test_a2c_training(self):
+        print('\n Testing A2C!')
         result = self.a2c.train(self.env)
         self.assertTrue(result['success'])
+        print("\n A2C Test Pass!")
         # self.assertGreater(result['reward'], 0)
 
 if __name__ == '__main__':

@@ -109,7 +109,6 @@ class A2C_Agent:
                 avg_reward /= 100
                 self.collect_performance(episode, avg_reward)
                 tqdm.write(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {total_reward:.2f}")
-                # print(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {total_reward:.2f}")
                 avg_reward = 0
         
         return {

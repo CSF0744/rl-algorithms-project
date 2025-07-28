@@ -10,52 +10,9 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-class DQN(nn.Module):
-    def __init__(
-        self, 
-        state_dim: int, 
-        action_dim: int, 
-        hidden_dim: int = 64
-    ):
-        super().__init__()
-        # Define the neural network architecture
-        # 3 Layer MLP with ReLU activations
-        self.fc1 = nn.Linear(state_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = nn.Linear(hidden_dim, action_dim)
-        self.relu = nn.ReLU()
-        
-    def forward(self, x: torch.Tensor):
-        # Forward pass through the network
-        # input state x, return Q-values for each action
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-class ReplayBuffer():
-    def __init__(self, capacity: int = 10000):
-        # Initialize the replay buffer with a fixed capacity
-        self.capacity = capacity
-        self.buffer = []
-        self.position = 0
-
-    def push(self, transition):
-        # Add a new transition to the buffer
-        if len(self.buffer) < self.capacity:
-            self.buffer.append(transition)
-        else:
-            self.buffer[self.position] = transition
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size: int):
-        # Sample a batch of transitions from the buffer
-        if len(self.buffer) < batch_size:
-            return None
-        return random.sample(self.buffer, batch_size)
-
-    def __len__(self):
-        return len(self.buffer)
+# Custom file
+from src.memory.buffer import ReplayBuffer
+from src.networks.q_net_discrete import QNetDiscrete
     
 class DQN_Agent():
     def __init__(
@@ -87,8 +44,8 @@ class DQN_Agent():
         self.device = device
         
         # network, optimizer and loss function
-        self.policy_net = DQN(state_dim, action_dim, hidden_dim)
-        self.target_net = DQN(state_dim, action_dim, hidden_dim)
+        self.policy_net = QNetDiscrete(state_dim, action_dim, hidden_dim)
+        self.target_net = QNetDiscrete(state_dim, action_dim, hidden_dim)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.policy_net.to(self.device)
         self.target_net.to(self.device)
@@ -116,31 +73,28 @@ class DQN_Agent():
                 state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
                 q_values = self.policy_net(state_tensor)
                 return q_values.argmax().item()
-    
-    def update(self, batch):
-        # Update the model using a batch of transitions
-        # input batch: list of transitions (state, action, reward, next_state, done)
-        states, actions, rewards, next_states, dones = zip(*batch)
         
-        states = torch.FloatTensor(np.array(states), device=self.device)
-        actions = torch.LongTensor(actions, device=self.device)
-        rewards = torch.FloatTensor(rewards, device=self.device)
-        next_states = torch.FloatTensor(np.array(next_states), device=self.device)
-        dones = torch.FloatTensor(dones, device=self.device)
-
-        # Compute Q-values for current states using policy network
-        q_values = self.policy_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-
-        # Compute Q-values for next states using target network
-        with torch.no_grad():
-            next_q_values = self.target_net(next_states).max(1)[0]
-            target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
-
-        # Compute loss and update the model
-        loss = self.criterion(q_values, target_q_values)
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+    def update(self, epoches: int = 10, batch_size: int = 64):
+        if len(self.buffer) < batch_size:
+            return
+        for _ in range(epoches):
+            for batch in self.buffer.sample(batch_size, self.device, discrete=True):
+                states = batch['states']
+                actions = batch['actions']
+                rewards = batch['rewards']
+                next_states = batch['next_states']
+                dones = batch['dones']
+                
+                q_values = self.policy_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+                
+                with torch.no_grad():
+                    next_q_values = self.target_net(next_states).max(1)[0]
+                    target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
+                
+                loss = self.criterion(q_values, target_q_values)
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
     
     def decay_epsilon(self, step: int):
         # Decay epsilon based on the current step
@@ -172,12 +126,11 @@ class DQN_Agent():
                 total_reward += reward
                 
                 # Store transition in replay buffer
-                self.buffer.push((state, action, reward, next_state, done))
+                self.buffer.push(state, action, reward, next_state, done)
                 
                 # Sample a batch from the replay buffer and update the model
                 if len(self.buffer) >= self.batch_size:
-                    batch = self.buffer.sample(self.batch_size)
-                    self.update(batch)
+                    self.update(epoches=1, batch_size=self.batch_size)
                 
                 # Update state
                 state = next_state

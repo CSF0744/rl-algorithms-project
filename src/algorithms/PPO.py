@@ -10,6 +10,10 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+# custom file
+from src.memory.buffer import PPO_buffer
+from src.networks.actor_critic_discrete import Actor, Critic
+
 class PPO(nn.Module):
     # PPO algorithm that gives a policy net and a value net
     def __init__(
@@ -21,105 +25,17 @@ class PPO(nn.Module):
         super().__init__()
         # Define the neural network architecture
         # policy network as actor
-        self.policy_net = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, action_dim)
-        )
+        self.policy_net = Actor(state_dim, action_dim, hidden_dim)
         # value network as critic
-        self.value_net = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 1)
-        )
+        self.value_net = Critic(state_dim, hidden_dim)
         
     def forward(self, x: torch.Tensor):
         # Forward pass through the network
         # input state x, return action logit and state value
         action_logit = self.policy_net(x)
         state_value = self.value_net(x)
-        return action_logit, state_value
-    
-class PPO_buffer():
-    # buffer for PPO algorithm to store transitions
-    def __init__(self, gamma: float = 0.99, lam: float = 0.95):
-        self.gamma = gamma
-        self.lam = lam
-        self.reset()
-    
-    def reset(self):
-        # reset the buffer to empty
-        self.states = []
-        self.actions = []
-        self.rewards = []
-        self.dones = []
-        self.values = []
-        self.log_probs = []
-        self.advantages = []
-        self.returns = []
+        return action_logit, state_value    
         
-    def push(self, state, action, reward, done, value, log_prob):
-        # Add a new transition to the buffer
-        self.states.append(state)
-        self.actions.append(action)
-        self.rewards.append(reward)
-        self.dones.append(done)
-        self.values.append(value)
-        self.log_probs.append(log_prob)
-
-    def compute_trajectory(self, end_value):
-        # compute advantages and returns for one trajectory using GAE
-        # append advantages and returns to buffer
-        advantages = []
-        returns = []
-        gae = 0
-        values = self.values + [end_value]
-        for t in reversed(range(len(self.rewards))):
-            delta = self.rewards[t] + self.gamma * values[t+1] * (1-self.dones[t]) - values[t]
-            gae = delta + self.gamma * self.lam * (1-self.dones[t]) * gae
-            advantages.insert(0, gae)
-            returns.insert(0, gae + values[t])
-            
-        self.advantages.extend(advantages)
-        self.returns.extend(returns)
-    
-    def sample(self, batch_size: int, device: str = 'cpu'):
-        # Sampel a batch of transition from buffer
-        if len(self.states) < batch_size:
-            return None
-        
-        indices = np.arange(len(self.states))
-        np.random.shuffle(indices)
-        
-        states = torch.tensor(np.array(self.states), dtype=torch.float32, device=device)
-        actions = torch.tensor(self.actions, dtype=torch.float32, device=device)
-        returns = torch.tensor(self.returns, dtype=torch.float32, device=device)
-        advantages = torch.tensor(self.advantages, dtype=torch.float32, device=device)
-        log_probs = torch.tensor(self.log_probs, dtype=torch.float32, device=device)
-        
-        # normalize advantages to lower variance in batch
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-        
-        for start in range(0, len(indices), batch_size):
-            end = start + batch_size
-            batch_idx = indices[start:end]
-            yield {
-                'states' : states[batch_idx],
-                'actions' : actions[batch_idx],
-                'returns' : returns[batch_idx],
-                'advantages' : advantages[batch_idx],
-                'log_probs' : log_probs[batch_idx]
-            }
-        
-        self.reset()  # Reset the buffer after sampling
-                
-    def __len__(self):
-        return len(self.states)
-    
 class PPO_Agent():
     # PPO agent that implement PPO algorithm
     def __init__(
@@ -167,7 +83,7 @@ class PPO_Agent():
             return
         # Update the PPO model using the collected transitions
         for _ in range(epoches):
-            for batch in self.buffer.sample(self.batch_size, self.device):
+            for batch in self.buffer.sample(batch_size, self.device):
                 states = batch['states']
                 actions = batch['actions']
                 returns = batch['returns']
