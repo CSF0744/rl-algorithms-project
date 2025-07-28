@@ -4,12 +4,14 @@
 """
 
 import unittest
-from algorithms import DQN_Agent
-from algorithms import PPO_Agent
-from algorithms import A2C_Agent  # Assuming A2CAgent
 import gymnasium as gym
-from environments import Car2DEnv  # Assuming a custom environment is defined in environments module
 import torch
+
+from src.algorithms.DQN import DQN_Agent
+from src.algorithms.PPO import PPO_Agent
+from src.algorithms.A3C import A2C_Agent  # Assuming A2CAgent
+from src.environments.custom_env import Car2DEnv  # Assuming a custom environment is defined in environments module
+
 
 class TestAlgorithms(unittest.TestCase):
     
@@ -68,7 +70,7 @@ class TestAlgorithms(unittest.TestCase):
             device=self.device
         )
         
-        self.a2c = A2CAgent(
+        self.a2c = A2C_Agent(
             state_dim,
             action_dim,
             hidden_dim=64,
@@ -77,17 +79,17 @@ class TestAlgorithms(unittest.TestCase):
         )
         
     def test_dqn_training(self):
-        result = self.dqn.train_DQN(self.env)
+        result = self.dqn.train(self.env)
         self.assertTrue(result['success'])
         # self.assertGreater(result['reward'], 0) # reward may not be positive
 
     def test_ppo_training(self):
-        result = self.ppo.train_PPO(self.env)
+        result = self.ppo.train(self.env)
         self.assertTrue(result['success'])
         # self.assertGreater(result['reward'], 0)
 
     def test_a3c_training(self):
-        result = self.a2c.train_AC(self.env)
+        result = self.a2c.train(self.env)
         self.assertTrue(result['success'])
         # self.assertGreater(result['reward'], 0)
 

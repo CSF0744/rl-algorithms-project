@@ -84,6 +84,5 @@ Unit tests for the algorithms are located in the `tests` directory. To run the t
 pytest src/tests/test_algorithms.py
 ```
 
-## Contributing
+## Contribution
 
-Contributions are welcome! Please submit a pull request or open an issue for any suggestions or improvements.

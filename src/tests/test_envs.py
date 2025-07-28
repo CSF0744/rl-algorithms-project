@@ -1,7 +1,8 @@
 import unittest
 import gymnasium as gym
-from src.environments import Car2DEnv  # Assuming a custom environment is defined in environments module
 import pygame
+from src.environments.custom_env import Car2DEnv  # Assuming a custom environment is defined in environments module
+
 
 class TestEnvironments(unittest.TestCase):
     
