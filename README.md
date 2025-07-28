@@ -17,11 +17,15 @@ rl-algorithms-project
 |   |   └── PPO.py
 │   ├── environments           # Custom environments or wrappers
 │   │   └── __init__.py
+│   │   └── custom_env.py
 │   ├── utils                  # Utility functions and classes
 │   │   └── __init__.py
+│   │   └── config.py
+│   │   └── plotter.py
 │   └── tests                  # Unit tests for algorithms
 │       └── __init__.py
 │       └── test_algorithms.py
+│       └── test_envs.py
 ├── requirements.txt           # Project dependencies
 ├── README.md                  # Project documentation
 └── .gitignore                 # Files to ignore in version control
@@ -55,11 +59,11 @@ rl-algorithms-project
    pip install -r requirements.txt
    ```
 
-## Usage
+## Example Usage
 
 To run the project, execute the `main.py` file:
 ```
-python src/main.py
+python src/main.py --algo dqn --env CartPole-v1 --num_episodes 1000
 ```
 
 ## Algorithms
@@ -67,7 +71,7 @@ python src/main.py
 This project includes implementations of various reinforcement learning algorithms, such as:
 - DQN (Deep Q-Network)
 - PPO (Proximal Policy Optimization)
-- A3C (Asynchronous Actor-Critic)
+- A3C (Asynchronous Actor-Critic) __WIP__
 
 ## Environments
 

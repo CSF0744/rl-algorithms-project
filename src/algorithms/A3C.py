@@ -29,7 +29,7 @@ class ActorCritic(nn.Module):
 
 
 # === A2C Trainer (Single Process Synchronous) ===
-class A2CAgent:
+class A2C_Agent:
     def __init__(
         self, 
         state_dim: int,
@@ -60,20 +60,8 @@ class A2CAgent:
 
     def collect_performance(self, episode: int, avg_reward: float):
         self.logger.append(avg_reward)
-        
-    def print_performance(self):
-        # Print the average reward over the training episodes
-        if self.logger:
-            plt.plot(self.logger)
-            plt.xlabel('Episodes')
-            plt.xticks(labels=range(0, 100*len(self.logger), 100), ticks=range(0, len(self.logger)))
-            plt.ylabel('Average Reward')
-            plt.title('A2C Training Performance')
-            plt.show()
-        else:
-            print("\nNo performance data collected.")
 
-    def train_AC(self, env: gym.Env):
+    def train(self, env: gym.Env):
         avg_reward = 0
         for episode in tqdm(range(self.num_episodes)):
             state = env.reset(seed=episode)[0]
@@ -227,12 +215,3 @@ def train_a3c(env_name="CartPole-v1"):
     workers = [A3CWorker(global_model, optimizer, env_name, global_ep) for _ in range(4)]
     [w.start() for w in workers]
     [w.join() for w in workers]
-
-
-# Example usage:
-# A2C
-# agent = A2CAgent(env_name="CartPole-v1")
-# agent.train(max_episodes=500)
-
-# A3C
-# train_a3c("CartPole-v1")

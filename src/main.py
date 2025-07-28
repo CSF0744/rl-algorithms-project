@@ -1,20 +1,54 @@
+import argparse
+import os
+
 import numpy as np
 import gymnasium as gym
-from src.algorithms.DQN import DQN_Agent
-from src.algorithms.PPO import PPO_Agent
-from src.algorithms.A3C import A2CAgent # Assuming these classes are defined in algorithms module
-from src.environments import CustomEnv1  # Assuming a custom environment is defined in environments module
+from algorithms import DQN_Agent, PPO_Agent, A2C_Agent
+
+import environments   # Assuming a custom environment is defined in environments module
+from utils.config import config
+from utils.plotter import plot_training_results
 import torch
 
-def main(agent_type: str = 'DQN', path: str = 'model/agent.pth'):
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--algo", type=str, default='dqn', choices=['dqn', 'ppo', 'a2c'])
+    parser.add_argument('--env', type=str, default='CartPole-v1')
+    parser.add_argument('--num_episodes', type=int, default=1000)
+    args = parser.parse_args()
+    return args
+
+def make_output_dir(algo_name):
+    model_dir = os.path.join('model',algo_name.lower())
+    figure_dir = os.path.join('figure',algo_name.lower())
+    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(figure_dir,exist_ok=True)
+    return model_dir, figure_dir
+
+def main():
     """Main function to train different RL agents
        Using keyword to select agent type
         Internally define hyperparameters and environment, change if necessary
     Args:
         agent_type (str, optional): _description_. Defaults to 'DQN'.
-    """
-    # Initialize the environment
-    env = gym.make('CartPole-v1', render_mode='rgb_array') 
+    """   
+    # get arguments
+    args = parse_args()
+    algo = args.algo
+    
+    algo_config = config.get(algo, {})
+    if args.num_episodes is not None:
+        algo_config['num_episode'] = args.num_episodes
+        
+    print(f'\n Running {algo} on {args.env} with config:')
+    for key, value in algo_config.items():
+        print(f'\n {key} : {value}')
+    
+    # generate output path
+    model_dir, figure_dir = make_output_dir(args.algo)
+        
+    # initialize environment and agent
+    env = gym.make(args.env) 
     env.reset()
     
     # set hyperparameters
@@ -23,51 +57,23 @@ def main(agent_type: str = 'DQN', path: str = 'model/agent.pth'):
     hidden_dim = 64  # Example hidden dimension for the neural network
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    if agent_type == 'DQN':
-        print("\nUsing DQN Agent!")
-        hyper_dict = dict(
-            lr=0.001,  # Learning rate
-            gamma=0.99,  # Discount factor
-            epsilon_start=1.0,  # Start value for epsilon-greedy policy
-            epsilon_end=0.1,  # End value for epsilon-greedy policy
-            epsilon_decay=1000,  # Decay steps for epsilon
-            buffer_size=10000,  # Size of the replay buffer
-            batch_size=64,  # Batch size for training
-            num_episodes=1000  # Number of episodes to train
-        )
+    # initialize agent
+    if args.algo == 'dqn':
+        agent = DQN_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
+    elif args.algo == 'ppo':
+        agent = PPO_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
+    elif args.algo == 'a2c':
+        print('\nAgent not ready yet!')
+    else:
+        print('\nAgent not exist!')
+    # train agent 
+    agent.train(env)
+    # save the model and plot training performance
+    agent.save_model(os.path.join(model_dir,'model.pth'))
+    plot_training_results(agent.logger, save_path=os.path.join(figure_dir,'train_reward.png'), title='Training Rewards Curve')
     
-        # Choose the reinforcement learning algorithm
-        agent = DQN_Agent(state_dim, action_dim, hidden_dim, hyper_dict, device)  # You can switch to PPO or A2C as needed
-
-        # train the agent
-        agent.train_DQN(env)
-        
-        # save the model
-        agent.save_model(path)
-        # load the model
-        #agent.load_model('model/dqn_agent_1000.pth')
-    elif agent_type == 'PPO':
-        print("\nUsing PPO Agent!")
-        hyper_dict = dict(
-            lr=0.001,  # Learning rate
-            gamma=0.99,  # Discount factor
-            lam=0.95,  # PPO clipping parameter
-            batch_size=64,  # Batch size for training
-            num_episodes=1000,  # Number of episodes to train
-            eps_clip=0.2 # PPO clip parameter
-        )
-        
-        agent = PPO_Agent(state_dim, action_dim, hidden_dim, hyper_dict, device)
-        agent.train_PPO(env)
-        
-        # save the model
-        agent.save_model(path)
-        # load the model
-        #agent.load_model('model/dqn_agent_1000.pth')
     # evaluate the agent
-    agent.print_performance()
-    avg_reward = agent.evaluate(env, num_episodes=10)
-    # print(f'Average reward over 10 episodes: {avg_reward}')    
+    agent.evaluate(env, num_episodes=10)  
 
 if __name__ == "__main__":
-    main('PPO', path='model/ppo_agent_1000.pth')
+    main()

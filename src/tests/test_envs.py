@@ -1,7 +1,6 @@
 import unittest
 import gymnasium as gym
 from src.environments import Car2DEnv  # Assuming a custom environment is defined in environments module
-import torch
 import pygame
 
 class TestEnvironments(unittest.TestCase):

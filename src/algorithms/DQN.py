@@ -151,20 +151,8 @@ class DQN_Agent():
     
     def collect_performance(self, episode: int, avg_reward: float):
         self.logger.append(avg_reward)
-        
-    def print_performance(self):
-        # Print the average reward over the training episodes
-        if self.logger:
-            plt.plot(self.logger)
-            plt.xlabel('Episodes')
-            plt.xticks(labels=range(0, 100*len(self.logger), 100), ticks=range(0, len(self.logger)))
-            plt.ylabel('Average Reward')
-            plt.title('DQN Training Performance')
-            plt.show()
-        else:
-            print("\nNo performance data collected.")
             
-    def train_DQN(self,
+    def train(self,
         env: gym.Env
     ):
         # for each episode, reset environment, get initial state and transition

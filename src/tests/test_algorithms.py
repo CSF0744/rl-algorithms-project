@@ -4,11 +4,11 @@
 """
 
 import unittest
-from src.algorithms.DQN import DQN_Agent
-from src.algorithms.PPO import PPO_Agent
-from src.algorithms.A3C import A2CAgent  # Assuming A2CAgent
+from algorithms import DQN_Agent
+from algorithms import PPO_Agent
+from algorithms import A2C_Agent  # Assuming A2CAgent
 import gymnasium as gym
-from src.environments import CustomEnv1  # Assuming a custom environment is defined in environments module
+from environments import Car2DEnv  # Assuming a custom environment is defined in environments module
 import torch
 
 class TestAlgorithms(unittest.TestCase):
