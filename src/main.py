@@ -6,7 +6,7 @@ from src.algorithms.A3C import A2CAgent # Assuming these classes are defined in 
 from src.environments import CustomEnv1  # Assuming a custom environment is defined in environments module
 import torch
 
-def main(agent_type: str = 'DQN'):
+def main(agent_type: str = 'DQN', path: str = 'model/agent.pth'):
     """Main function to train different RL agents
        Using keyword to select agent type
         Internally define hyperparameters and environment, change if necessary
@@ -43,7 +43,7 @@ def main(agent_type: str = 'DQN'):
         agent.train_DQN(env)
         
         # save the model
-        agent.save_model('model/dqn_agent_1000.pth')
+        agent.save_model(path)
         # load the model
         #agent.load_model('model/dqn_agent_1000.pth')
     elif agent_type == 'PPO':
@@ -61,7 +61,7 @@ def main(agent_type: str = 'DQN'):
         agent.train_PPO(env)
         
         # save the model
-        agent.save_model('model/ppo_agent_1000.pth')
+        agent.save_model(path)
         # load the model
         #agent.load_model('model/dqn_agent_1000.pth')
     # evaluate the agent
@@ -70,4 +70,4 @@ def main(agent_type: str = 'DQN'):
     # print(f'Average reward over 10 episodes: {avg_reward}')    
 
 if __name__ == "__main__":
-    main('PPO')
+    main('PPO', path='model/ppo_agent_1000.pth')

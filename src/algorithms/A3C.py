@@ -7,6 +7,8 @@ import torch.multiprocessing as mp
 import gymnasium as gym
 import numpy as np
 import time
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # Shared Actor-Critic Network
 class ActorCritic(nn.Module):
@@ -46,6 +48,8 @@ class A2CAgent:
         self.model = ActorCritic(state_dim, action_dim, hidden_dim)
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        
+        self.logger = []
 
     def select_action(self, state):
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -54,8 +58,24 @@ class A2CAgent:
         action = dist.sample()
         return action.item(), dist.log_prob(action), value
 
+    def collect_performance(self, episode: int, avg_reward: float):
+        self.logger.append(avg_reward)
+        
+    def print_performance(self):
+        # Print the average reward over the training episodes
+        if self.logger:
+            plt.plot(self.logger)
+            plt.xlabel('Episodes')
+            plt.xticks(labels=range(0, 100*len(self.logger), 100), ticks=range(0, len(self.logger)))
+            plt.ylabel('Average Reward')
+            plt.title('A2C Training Performance')
+            plt.show()
+        else:
+            print("\nNo performance data collected.")
+
     def train_AC(self, env: gym.Env):
-        for episode in range(self.num_episodes):
+        avg_reward = 0
+        for episode in tqdm(range(self.num_episodes)):
             state = env.reset(seed=episode)[0]
             log_probs = []
             values = []
@@ -87,14 +107,21 @@ class A2CAgent:
             # Compute loss
             actor_loss = -(log_probs * advantage).mean()
             critic_loss = F.mse_loss(values, returns)
-            loss = actor_loss + 0.5 * critic_loss
+            # entropy loss can be added for exploration
+            # entropy_loss = -torch.sum(log_probs * torch.exp(log_probs)).mean()
+            loss = actor_loss + 0.5 * critic_loss # + 0.01 * entropy_loss
+            
+            avg_reward += total_reward
 
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
             if episode % 100 == 0:
-                print(f"A2C Episode {episode+1}/{self.num_episodes}, Total Reward: {total_reward:.2f}")
+                avg_reward /= 100
+                self.collect_performance(episode, avg_reward)
+                print(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {total_reward:.2f}")
+                avg_reward = 0
         
         return {
             'success': True,
@@ -105,7 +132,8 @@ class A2CAgent:
         torch.save(self.model.state_dict(), path)
         
     def load_model(self, path):
-        self.model.load_state_dict(torch.load(path, map_location=self.device))
+        state_dict = torch.load(path, map_location=self.device, weights_only=True)
+        self.model.load_state_dict(state_dict)
         self.model.to(self.device)
     
     def evaluate(self, env: gym.Env, num_episodes: int = 10):
@@ -126,7 +154,7 @@ class A2CAgent:
             total_rewards.append(total_reward)
         
         avg_reward = np.mean(total_rewards)
-        print(f'Average reward over {num_episodes} episodes: {avg_reward:.2f}')
+        print(f'\nAverage reward over {num_episodes} episodes: {avg_reward:.2f}')
         return avg_reward
     
 # === A3C Worker ===

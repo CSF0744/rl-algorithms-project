@@ -1,10 +1,9 @@
 numpy
 torch
-gym
+gymnasium
 matplotlib
-pandas
-scikit-learn
-seaborn
-tensorboard
-opencv-python
+tqdm
 pytest
+unittest
+random
+pygame

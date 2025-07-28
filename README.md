@@ -6,15 +6,21 @@ This project is designed to implement and test various reinforcement learning al
 
 ```
 rl-algorithms-project
+├── figure
+├── model
 ├── src
 │   ├── main.py                # Entry point for the application
 │   ├── algorithms             # Contains implementations of RL algorithms
 │   │   └── __init__.py
+|   |   └── A3C.py
+|   |   └── DQN.py
+|   |   └── PPO.py
 │   ├── environments           # Custom environments or wrappers
 │   │   └── __init__.py
 │   ├── utils                  # Utility functions and classes
 │   │   └── __init__.py
 │   └── tests                  # Unit tests for algorithms
+│       └── __init__.py
 │       └── test_algorithms.py
 ├── requirements.txt           # Project dependencies
 ├── README.md                  # Project documentation
