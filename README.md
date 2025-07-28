@@ -6,11 +6,11 @@ This project is designed to implement and test various reinforcement learning al
 
 ```
 rl-algorithms-project
-├── figure
-├── model
+├── figure                     # Store figure output
+├── model                      # Save model parameters
 ├── src
 │   ├── main.py                # Entry point for the application
-│   ├── algorithms             # Contains implementations of RL algorithms
+│   ├── algorithms             # Contains implementations of RL algorithm Agents
 │   │   └── __init__.py
 |   |   └── A3C.py
 |   |   └── DQN.py
@@ -18,11 +18,18 @@ rl-algorithms-project
 │   ├── environments           # Custom environments or wrappers
 │   │   └── __init__.py
 │   │   └── custom_env.py
+│   ├── memory                 # Buffer for replay
+│   │   └── __init__.py
+│   │   └── buffer.py
+│   ├── networks               # Custom network model folder
+│   │   └── actor_critic_continuous.py
+│   │   └── actor_critic_discrete.py
+│   │   └── q_net_discrete.py
 │   ├── utils                  # Utility functions and classes
 │   │   └── __init__.py
 │   │   └── config.py
 │   │   └── plotter.py
-│   └── tests                  # Unit tests for algorithms
+│   └── tests                  # Unit tests for algorithms and environments
 │       └── __init__.py
 │       └── test_algorithms.py
 │       └── test_envs.py
@@ -72,6 +79,11 @@ This project includes implementations of various reinforcement learning algorith
 - DQN (Deep Q-Network)
 - PPO (Proximal Policy Optimization)
 - A3C (Asynchronous Actor-Critic) __WIP__
+- DDPG __WIP__
+
+## Performance
+
+Include figures of training performance.
 
 ## Environments
 
@@ -81,8 +93,18 @@ Custom environments can be defined or existing Gym environments can be wrapped f
 
 Unit tests for the algorithms are located in the `tests` directory. To run the tests, use:
 ```
-pytest src/tests/test_algorithms.py
+python -m src.tests.test_algorithms
 ```
 
 ## Contribution
 
+## Reference
+- Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., Veness, J., Bellemare, M. G., ... & Hassabis, D. (2015). Human-level control through deep reinforcement learning. *Nature*, 518(7540), 529–533.  [https://doi.org/10.1038/nature14236](https://doi.org/10.1038/nature14236)
+
+- Schulman, J., Wolski, F., Dhariwal, P., Radford, A., & Klimov, O. (2017). Proximal Policy Optimization Algorithms. *arXiv preprint arXiv:1707.06347*.  [https://arxiv.org/abs/1707.06347](https://arxiv.org/abs/1707.06347)
+
+- Mnih, V., Badia, A. P., Mirza, M., Graves, A., Lillicrap, T., Harley, T., ... & Kavukcuoglu, K. (2016). Asynchronous methods for deep reinforcement learning. *International Conference on Machine Learning (ICML)*.  [https://arxiv.org/abs/1602.01783](https://arxiv.org/abs/1602.01783)
+
+- Mnih, V., Badia, A. P., Mirza, M., Graves, A., Lillicrap, T., Harley, T., ... & Kavukcuoglu, K. (2016). Asynchronous Advantage Actor-Critic Agents. *arXiv preprint arXiv:1602.01783*.  [https://arxiv.org/abs/1602.01783](https://arxiv.org/abs/1602.01783)
+
+- Lillicrap, T. P., Hunt, J. J., Pritzel, A., Heess, N., Erez, T., Tassa, Y., ... & Wierstra, D. (2015). Continuous control with deep reinforcement learning. *arXiv preprint arXiv:1509.02971*.  [https://arxiv.org/abs/1509.02971](https://arxiv.org/abs/1509.02971)

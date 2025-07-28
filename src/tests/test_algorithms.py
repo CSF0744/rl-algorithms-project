@@ -100,6 +100,7 @@ class TestAlgorithms(unittest.TestCase):
     
     def test_ddpg_training(self):
         print('\n Testing DDPG!')
+        print('\n DDPG is still under work.')
         print("\n DDPG Test Pass!")
 
 if __name__ == '__main__':

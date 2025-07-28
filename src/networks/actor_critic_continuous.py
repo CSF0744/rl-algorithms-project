@@ -46,4 +46,8 @@ class Critic(nn.Module):
         x = torch.cat([state, action], dim=1)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        return self.l3(x)
+        return self.fc3(x)
+    
+## for more complecated action space, use tanh to ensure in range [-1, 1]. then scale action into correct
+## range via the following
+## low + 0.5 * (action + 1) * (high - low)

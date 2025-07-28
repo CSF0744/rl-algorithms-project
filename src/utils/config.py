@@ -22,5 +22,14 @@ config = {
         'gamma':0.99,  # Discount factor
         'batch_size':64,  # Batch size for training
         'num_episodes':1000,  # Number of episodes to train
+    },
+    "ddpg" : {
+        'actor_lr' : 0.001,
+        'critic_lr' :  0.001,
+        'gamma' : 0.99,
+        'tau' :  0.99,
+        'batch_size':64,
+        'num_episodes' : 1000,
+        'buffer_size':10000
     }
 }
