@@ -1,0 +1,12 @@
+# python
+__pycache__/
+
+# env
+.env/
+.venv/
+
+# pytest
+.pytest_cache
+
+# vscode
+.vscode/
