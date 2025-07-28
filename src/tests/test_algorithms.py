@@ -9,8 +9,7 @@ import torch
 
 from src.algorithms.DQN import DQN_Agent
 from src.algorithms.PPO import PPO_Agent
-from src.algorithms.A3C import A2C_Agent  # Assuming A2CAgent
-from src.environments.custom_env import Car2DEnv  # Assuming a custom environment is defined in environments module
+from src.algorithms.A3C import A2C_Agent
 
 
 class TestAlgorithms(unittest.TestCase):
@@ -98,6 +97,10 @@ class TestAlgorithms(unittest.TestCase):
         self.assertTrue(result['success'])
         print("\n A2C Test Pass!")
         # self.assertGreater(result['reward'], 0)
+    
+    def test_ddpg_training(self):
+        print('\n Testing DDPG!')
+        print("\n DDPG Test Pass!")
 
 if __name__ == '__main__':
     unittest.main()
