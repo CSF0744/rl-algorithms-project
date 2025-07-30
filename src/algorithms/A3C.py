@@ -51,12 +51,12 @@ class A2C_Agent:
         
         self.logger = []
 
-    def action_selection(self, state):
+    def action_selection(self, state, eval : bool = False):
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         probs, value = self.model(state)
         dist = torch.distributions.Categorical(probs)
         action = dist.sample()
-        return action.item(), dist.log_prob(action), value
+        return action.item(), dist.log_prob(action), value.item()
 
     def collect_performance(self, episode: int, avg_reward: float):
         self.logger.append(avg_reward)

@@ -13,6 +13,7 @@ from utils.plotter import plot_training_results
 from utils.render_agent import render_trained_agent
 import torch
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", type=str, default='dqn', choices=['dqn', 'ppo', 'a2c'])
@@ -33,7 +34,7 @@ def main():
        Using keyword to select agent type
         Internally define hyperparameters and environment, change if necessary
     Args:
-        agent_type (str, optional): Defaults to 'DQN'.
+        agent_type (str, optional): _description_. Defaults to 'DQN'.
     """   
     # get arguments
     args = parse_args()
@@ -51,7 +52,8 @@ def main():
     model_dir, figure_dir = make_output_dir(args.algo)
         
     # initialize environment and agent
-    env = gym.make(args.env) 
+    env_name = args.env
+    env = gym.make(env_name) 
     env.reset()
     
     # set hyperparameters
@@ -64,20 +66,25 @@ def main():
     if args.algo == 'dqn':
         agent = DQN_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
     elif args.algo == 'ppo':
+        print('\nNot available now, fixed the action_selection to use')
+        return -1
         agent = PPO_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
     elif args.algo == 'a2c':
+        print('\nNot available now, fixed the action_selection to use')
+        return -1
         agent = A2C_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
     else:
         print('\nAgent not exist!')
+        return -1
     # train agent 
     agent.train(env)
     # save the model and plot training performance
-    agent.save_model(os.path.join(model_dir,'model.pth'))
-    plot_training_results(agent.logger, save_path=os.path.join(figure_dir,'train_reward.png'), title='Training Rewards Curve')
+    agent.save_model(os.path.join(model_dir,f'{env_name.lower()}_model.pth'))
+    plot_training_results(agent.logger, save_path=os.path.join(figure_dir,f'{env_name.lower()}_train_reward.png'), title='Training Rewards Curve')
     
-    ## evaluate the agent
-    env = gym.make(args.env, render_mode='human')
-    agent.evaluate(env, num_episodes=10)
+    # evaluate the agent
+    env = gym.make(env_name, render_mode='human')
+    agent.evaluate(env, num_episodes=10)  
     # evalute agent with rendering
     render_trained_agent(agent, env, True)
 

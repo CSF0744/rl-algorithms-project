@@ -69,7 +69,7 @@ class PPO_Agent():
         
         self.logger = [] #  collect average reward in training steps
 
-    def action_selection(self, state):
+    def action_selection(self, state, eval: bool = False):
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         with torch.no_grad():
             logits, value = self.model(state)

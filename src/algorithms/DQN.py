@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import gymnasium as gym
 import random
 from tqdm import tqdm
+from typing import Any, Dict, Tuple, Optional
 
 # NN package
 import torch
@@ -13,6 +14,7 @@ from torch import nn
 # Custom file
 from src.memory.buffer import ReplayBuffer
 from src.networks.q_net_discrete import QNetDiscrete
+from base import BaseAgent
     
 class DQN_Agent():
     def __init__(
@@ -61,40 +63,43 @@ class DQN_Agent():
     def action_selection(
         self, 
         state: int, 
-        epsilon: float = 0.5
+        epsilon: float = 0.5,
+        eval : bool = False
     ):
         # Select an action based on epsilon-greedy policy
         # input state numpy array, epsilon for exploration
         # return action index
-        if np.random.rand() < epsilon:
-            return np.random.randint(self.action_dim)
-        else:
+        if eval or np.random.rand() > epsilon:
+            # return greedy if in evaluation or greater than epsilon
             with torch.no_grad():
-                state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-                q_values = self.policy_net(state_tensor)
-                return q_values.argmax().item()
+                    state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+                    q_values = self.policy_net(state_tensor)
+                    return q_values.argmax().item()
+        else:
+            return np.random.randint(self.action_dim)
         
     def update(self, epoches: int = 10, batch_size: int = 64):
         if len(self.buffer) < batch_size:
             return
         for _ in range(epoches):
-            for batch in self.buffer.sample(batch_size, self.device, discrete=True):
-                states = batch['states']
-                actions = batch['actions']
-                rewards = batch['rewards']
-                next_states = batch['next_states']
-                dones = batch['dones']
-                
-                q_values = self.policy_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-                
-                with torch.no_grad():
-                    next_q_values = self.target_net(next_states).max(1)[0]
-                    target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
-                
-                loss = self.criterion(q_values, target_q_values)
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+            batch = self.buffer.sample(batch_size, self.device, discrete=True)
+            
+            states = batch['states']
+            actions = batch['actions']
+            rewards = batch['rewards']
+            next_states = batch['next_states']
+            dones = batch['dones']
+            
+            q_values = self.policy_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+            
+            with torch.no_grad():
+                next_q_values = self.target_net(next_states).max(1)[0]
+                target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
+            
+            loss = self.criterion(q_values, target_q_values)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
     
     def decay_epsilon(self, step: int):
         # Decay epsilon based on the current step
@@ -189,4 +194,171 @@ class DQN_Agent():
         print(f"\nAverage Reward over {num_episodes} episodes: {avg_reward:.2f}")
         return avg_reward
     
+class DQNAgent(BaseAgent):
+    # A more modular realization of DQN agent
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden_dim: int, 
+        config: Dict[str, Any]
+    ):  
+        # Load parameters for agent
+        super.__init__(state_dim,action_dim,hidden_dim,config)
+        self.lr = config.get('lr', 0.001)
+        self.gamma = config.get('gamma', 0,99)
+        self.epsilon_start = config.get('epsilon_start', 0.5)
+        self.epsilon_end = config.get('epsilon_end', 0.01)
+        self.epsilon_decay = config.get('epsilon_decay', 1000)
+        self.epsilon = self.epsilon_start
+        
+        self.buffer = ReplayBuffer(config.get('buffer_size', 10_000))
+        self.batch_size = config.get('batch_size', 64)
+        self.num_episodes = config.get('num_episodes', 500)
+        self.device = config.get('device', 'cpu')
+        
+        # Initialize model newtork
+        self.policy_net = QNetDiscrete(self.state_dim, self.action_dim, self.hidden_dim)
+        self.target_net = QNetDiscrete(self.state_dim, self.action_dim, self.hidden_dim)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.policy_net.to(self.device)
+        self.target_net.to(self.device)
+        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=0.001)
+        self.criterion = nn.MSELoss()
+        
+        # Logger to collect performance across training
+        self.logger = []
+        
+
+    def action_selection(self, state, epsilon: float, eval:bool=False, **kwargs):
+        """
+        Select action based on epsilon greedy policy and whether in evaluation mode
+
+        Args:
+            state np.ndarray: Current environment state
+            epsilon float: Epsilon value
+            eval (bool, optional): Evalulation mode, greedy policy. Defaults to False.
+
+        Returns:
+            int : discrete action
+            None
+        """
+        if eval or np.random.rand() > epsilon:
+            # return greedy if in evaluation or greater than epsilon
+            with torch.no_grad():
+                    state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+                    q_values = self.policy_net(state_tensor)
+                    return q_values.argmax().item(), None
+        else:
+            return np.random.randint(self.action_dim), None
+            
+    def decay_epsilon(self):
+        """
+        Decay the epsilon every episode during training
+        """
+        if self.epsilon > self.epsilon_end:
+            self.epsilon -= (self.epsilon_start - self.epsilon_end) / self.epsilon_decay
+            self.epsilon = max(self.epsilon, self.epsilon_end)
+    
+    def collect_performance(self, episode: int, avg_reward: float):
+        """
+        Store performance into logger.
+
+        Args:
+            episode (int): Episode number
+            avg_reward (float): Average reward after previous log episode
+        """
+        self.logger.append(avg_reward)
+        
+    def update(self, epoches, batch_size):
+        """
+        Update the agent with k epoches of data with batch_size
+
+        Args:
+            epoches (_type_): _description_
+            batch_size (_type_): _description_
+        """
+        if len(self.buffer) < batch_size:
+            return
+        for _ in range(epoches):
+            batch = self.buffer.sample(batch_size, self.device, discrete=True)
+            
+            states = batch['states']
+            actions = batch['actions']
+            rewards = batch['rewards']
+            next_states = batch['next_states']
+            dones = batch['dones']
+            
+            q_values = self.policy_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+            
+            with torch.no_grad():
+                next_q_values = self.target_net(next_states).max(1)[0]
+                target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
+            
+            loss = self.criterion(q_values, target_q_values)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+    def train(self, env: gym.Env):
+        """
+        Train agent in given environment
+
+        Args:
+            env (gym.Env): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        avg_reward = 0
+        for episode in tqdm(range(self.num_episodes)):
+            state, info = env.reset()
+            done = False
+            total_reward = 0
+            
+            while not done:
+                # Select action using epsilon-greedy policy
+                action = self.action_selection(state, self.epsilon)
+                
+                # Take action in the environment
+                next_state, reward, terminated, truncated, info = env.step(action)
+                done = terminated or truncated
+                total_reward += reward
+                
+                # Store transition in replay buffer
+                self.buffer.push(state, action, reward, next_state, done)
+                
+                # Sample a batch from the replay buffer and update the model
+                if len(self.buffer) >= self.batch_size:
+                    self.update(epoches=1, batch_size=self.batch_size)
+                
+                # Update state
+                state = next_state
+            avg_reward += total_reward
+            # Decay epsilon after each episode
+            self.decay_epsilon(episode)
+            if episode % 10 == 0:
+                # Update target network every 10 episodes
+                self.target_net.load_state_dict(self.policy_net.state_dict())
+                
+            if episode % 100 == 0:
+                # Print progress every 100 episodes
+                avg_reward /= 100
+                self.collect_performance(episode, avg_reward)
+                
+                tqdm.write(f"\nDQN Episode {episode + 1}/{self.num_episodes}, Average Reward: {avg_reward}, Epsilon: {self.epsilon:.4f}")
+                avg_reward = 0
+        
+        # Return success train status and final total reward        
+        return {'success': True, 'reward': total_reward}
+    
+    def save_model(self, filepath):
+        torch.save(self.policy_net.state_dict(), filepath)
+    def load_model(self, filepath):
+        state_dict = torch.load(filepath, map_location=self.device, weights_only=True)
+        self.policy_net.load_state_dict(state_dict)
+        self.policy_net.to(self.device)
+    
+    def evaluate(self, env, num_episodes = 10, render = False):
+        return super().evaluate(env, num_episodes, render)
 # End of DQN.py

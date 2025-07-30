@@ -51,7 +51,7 @@ class DDPG_Agent():
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
     
-    def action_selection(self, state, noise_std=0.1):
+    def action_selection(self, state, noise_std=0.1, eval: bool =False):
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         action = self.actor(state).cpu().data.numpy().flatten()
         if noise_std != 0:

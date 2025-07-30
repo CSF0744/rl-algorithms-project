@@ -8,12 +8,12 @@ class TestEnvironments(unittest.TestCase):
     
     def setUp(self):
         # Set up test environment
-        self.env = Car2DEnv()
+        self.env = gym.make('Car2DEnv-v0')
         self.env.reset()
         
     def test_environment_initialization(self):
         # Test if the environment initializes correctly
-        self.assertIsInstance(self.env, Car2DEnv)
+        self.assertIsInstance(self.env.unwrapped, Car2DEnv)
         self.assertEqual(self.env.action_space.n, 4)  # Assuming 4 discrete actions
         self.assertEqual(self.env.observation_space.shape, (2,))  # Assuming 2D state space
 

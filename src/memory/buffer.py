@@ -23,8 +23,12 @@ class ReplayBuffer():
         if len(self.buffer) < batch_size:
             return None
         
-        indices = np.arange(len(self.buffer))
-        np.random.shuffle(indices)
+        # indices = np.arange(len(self.buffer))
+        # np.random.shuffle(indices)
+        
+        indices = np.random.choice(len(self.buffer), batch_size, replace=False)
+        batch = [self.buffer[i] for i in indices]
+        states, actions, rewards, next_states, dones = zip(*batch)
         
         # Unpack entire buffer into separate arrays
         states, actions, rewards, next_states, dones = zip(*self.buffer)
@@ -37,18 +41,25 @@ class ReplayBuffer():
         next_states = torch.tensor(np.array(next_states), dtype=torch.float32, device=device)
         dones = torch.tensor(np.array(dones), dtype=torch.float32, device=device) #.unsqueeze(1)
         
-        # Yield mini-batches
-        for start in range(0, len(self.buffer), batch_size):
-            end = start + batch_size
-            batch_idx = indices[start:end]
+        return {
+            'states' : states,
+            'actions': actions,
+            'rewards': rewards,
+            'next_states': next_states,
+            'dones': dones
+        }
+        # # Yield mini-batches
+        # for start in range(0, len(self.buffer), batch_size):
+        #     end = start + batch_size
+        #     batch_idx = indices[start:end]
 
-            yield {
-                'states': states[batch_idx],
-                'actions': actions[batch_idx],
-                'rewards': rewards[batch_idx],
-                'next_states': next_states[batch_idx],
-                'dones': dones[batch_idx]
-            }
+        #     yield {
+        #         'states': states[batch_idx],
+        #         'actions': actions[batch_idx],
+        #         'rewards': rewards[batch_idx],
+        #         'next_states': next_states[batch_idx],
+        #         'dones': dones[batch_idx]
+        #     }
 
     def __len__(self):
         return len(self.buffer)

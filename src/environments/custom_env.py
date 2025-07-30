@@ -3,6 +3,9 @@ from gymnasium import spaces
 import numpy as np
 import pygame
 
+def fast_norm(v):
+    return np.sqrt(np.sum(np.square(v)))
+
 # This module initializes custom environments for reinforcement learning algorithms.
 class CustomEnvTemplate(gym.Env):
     def __init__(self):
@@ -38,7 +41,14 @@ class Car2DEnv(gym.Env):
         'author': 'Your Name',
         'version': '0.1.0'
     }
-    def __init__(self, max_steps=1000):
+    def __init__(self,render_mode=None, max_steps=500):
+        """Possible Improvement: 
+        1. continuous dynamic
+        2. parameterize env
+        3. add info dict for step
+        4. show velocity direction
+        
+        """
         super(Car2DEnv, self).__init__()
         # Define action and observation space
         self.action_space = spaces.Discrete(4)  # Four directionary steps
@@ -48,6 +58,7 @@ class Car2DEnv(gym.Env):
         self.observation_space = spaces.Box(low=-100, high=100, shape=(2,), dtype=np.float32) # position
         # self.observation_space = spaces.Box(low=np.array([0, 0, -np.pi, 0]), high=np.array([100, 100, np.pi, 10]), dtype=np.float32) # x, y, theta, velocity
         self.max_steps = max_steps
+        self.goal_threshold = 2.0
         self.current_step = 0
         
         self.state = None  # Initialize state
@@ -59,12 +70,14 @@ class Car2DEnv(gym.Env):
         self.trajectory = [] # Store trajectory for rendering
         
         # Redering settings for pygame
+        self.render_mode = render_mode
         self.screen = None
         self.clock = None
         self.screen_size = 250
     
     def reset(self, seed=None, options=None):
         # Reset the state of the environment to an initial state
+        # 1. add random initial point and random seed properly in future
         super().reset(seed=seed)
         self.current_step = 0
         self.state = np.array([0.0, 0.0], dtype=np.float32)
@@ -74,34 +87,38 @@ class Car2DEnv(gym.Env):
     def step(self, action):
         # Execute one time step within the environment
         x, y= self.state
-        step = action
         
         # Update state based on action and kinematics
-        if step == 0:
-            y += 1 * self.dt
-        elif step == 1:
-            y -= 1 * self.dt
-        elif step == 2:
-            x += 1 * self.dt
-        elif step == 3:
-            x -= 1 * self.dt
+        directions = {
+            0: np.array([0, 1]),   # up
+            1: np.array([0, -1]),  # down
+            2: np.array([1, 0]),   # right
+            3: np.array([-1, 0]),  # left
+        }
+        self.state += directions[action] * self.dt
             
         self.state = np.array([x, y])
+        # add noise for robustness
+        # self.state += np.random.normal(0, 0.1, size=self.state.shape)
+        # clip state to avoid out off bound
+        self.state = np.clip(self.state, -100, 100)
         self.current_step += 1
         # Collision check
         collision = self.collision_check()
             
         # Check for goal reach
-        goal_distance = np.linalg.norm(self.state - self.goal)
-        done = goal_distance < 2.0 or collision or self.current_step >= self.max_steps
+        goal_distance = fast_norm(self.state - self.goal)
+        done = goal_distance < self.goal_threshold or collision or self.current_step >= self.max_steps
         
         # Reward calculation
         reward = self.reward_function(collision)
-        
         self.trajectory.append(self.state)
+        
         return self.state, reward, done, False, {} #Return state, reward, terminated, truncated, info
     
     def render(self):
+        if self.render_mode != 'human':
+            return
         if self.screen is None:
             pygame.init()
             self.screen = pygame.display.set_mode((self.screen_size, self.screen_size))
@@ -134,19 +151,22 @@ class Car2DEnv(gym.Env):
         collision = False
         for obs in self.obstacles:
             # collison check with circular obs
-            if np.linalg.norm(self.state - obs[:2]) < obs[2]:
+            if fast_norm(self.state - obs[:2]) < obs[2]:
                 collision = True
                 break
             
         return collision
     
     def reward_function(self, collision):
-        goal_distance = np.linalg.norm(self.state - self.goal)
-        reward = -goal_distance
-        if collision:
+        goal_distance = fast_norm(self.state - self.goal)
+        reward = -goal_distance * 0.1
+        if collision: # collision to obstacle
             reward = - 100
-        elif goal_distance < 2.0:
+        elif goal_distance < self.goal_threshold: # reach goal
             reward = 100
+        else: # add reward for approaching to goal
+            previous_distance = np.linalg.norm(self.trajectory[-1] - self.goal) if len(self.trajectory)>1 else goal_distance
+            reward += (previous_distance-goal_distance) * 10
             
         return reward
     
