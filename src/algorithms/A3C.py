@@ -14,6 +14,7 @@ import torch.multiprocessing as mp
 # Custom file
 from src.memory.buffer import A2C_buffer
 from src.networks.actor_critic_discrete import ActorCritic # actor critic with shared 1st layer
+from .base import BaseAgent
 
 
 # === A2C Trainer (Single Process Synchronous) ===
@@ -78,10 +79,10 @@ class A2C_Agent:
             returns = torch.tensor(returns, dtype=torch.float32)
             values = torch.cat(values).squeeze()
             log_probs = torch.stack(log_probs)
-            advantage = returns - values.detach()
+            advantages = returns - values.detach()
 
             # Compute loss
-            actor_loss = -(log_probs * advantage).mean()
+            actor_loss = -(log_probs * advantages).mean()
             critic_loss = F.mse_loss(values, returns)
             # entropy loss can be added for exploration
             # entropy_loss = -torch.sum(log_probs * torch.exp(log_probs)).mean()
@@ -132,6 +133,111 @@ class A2C_Agent:
         avg_reward = np.mean(total_rewards)
         print(f'\nAverage reward over {num_episodes} episodes: {avg_reward:.2f}')
         return avg_reward
+
+class A2CAgent(BaseAgent):
+    def __init__(
+        self, 
+        state_dim, 
+        action_dim, 
+        hidden_dim, 
+        config
+    ):
+        super().__init__(state_dim, action_dim, hidden_dim, config)
+        self.lr = config.get('lr', 0.001)
+        self.gamma = config.get('gamma', 0.99)
+        self.batch_size = config.get('batch_size', 64)
+        self.num_episodes = config.get('num_episodes', 500)
+        self.device = config.get('device', 'cpu')
+        
+        # Initialize A2C buffer
+        self.buffer = A2C_buffer(gamma=self.gamma, lam=0)
+        
+        # Initialize model, optimizer and loss function
+        self.model = ActorCritic(self.state_dim, self.action_dim, self.hidden_dim)
+        self.model.to(self.device)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        
+        self.logger = []
+        
+    def action_selection(self, state, eval: bool = False):
+        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+        probs, value = self.model(state)
+        dist = torch.distributions.Categorical(probs)
+        action = dist.sample()
+        info = {'log_prob': dist.log_prob(action),
+                'value':value.item()}
+        return action.item(), info
+    
+    def collect_performance(self, episode, avg_reward):
+        self.logger.append(avg_reward)
+    
+    def update(self, epoches, batch_size):
+        if len(self.buffer) < batch_size:
+            return
+        for _ in range(epoches):
+            for batch in self.buffer.sample(batch_size, self.device):
+                states = batch['states']
+                actions = batch['actions']
+                values = batch['values']
+                returns = batch['returns']
+                advantages = batch['advantages']
+                log_probs = batch['log_probs']
+                
+                actor_loss = -(log_probs * advantages).mean()
+                critic_loss = F.mse_loss(values, returns)
+                # entropy loss can be added for exploration
+                # entropy_loss = -torch.sum(log_probs * torch.exp(log_probs)).mean()
+                loss = actor_loss + 0.5 * critic_loss # + 0.01 * entropy_loss
+
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+    
+    def train(self, env, **kwargs):
+        avg_reward = 0
+        for episode in tqdm(range(self.num_episodes)):
+            state, _ = env.reset()
+            done = False
+            total_reward = 0
+            # run for whole trajectory
+            while not done:
+                action, info = self.action_selection(state)
+                log_prob = info['log_prob']
+                value = info['value']
+                
+                next_state, reward, terminated, truncated, info = env.step(action)
+                done = terminated or truncated
+                total_reward += reward
+                
+                self.buffer.push(state, action, reward, done, value, log_prob)
+                
+                state = next_state
+                
+            # compute advantages and returns
+            # with torch.no_grad():
+            #     _, end_value = self.model(torch.tensor(state, dtype=torch.float32, device=self.device))
+            # self.buffer.compute_trajectory(end_value.item())
+            self.buffer.compute_trajectory(0)
+            
+            self.update(epoches=10, batch_size=self.batch_size)
+            avg_reward += total_reward
+            
+            if episode % 100 == 0:
+                avg_reward /= 100
+                self.collect_performance(episode, avg_reward)
+                tqdm.write(f"\nA2C Episode {episode+1}/{self.num_episodes}, Average Reward: {avg_reward}")
+                avg_reward = 0
+    
+    def save_model(self, filepath):
+        torch.save(self.model.state_dict(), filepath)
+    
+    def load_model(self, filepath):
+        state_dict = torch.load(filepath, map_location=self.device, weights_only=True)
+        self.model.load_state_dict(state_dict)
+        self.model.to(self.device)
+    
+    def evaluate(self, env, num_episodes = 10, render = False):
+        return super().evaluate(env, num_episodes, render)
     
 # === A3C Worker ===
 class A3CWorker(mp.Process):

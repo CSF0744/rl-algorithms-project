@@ -64,7 +64,7 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def train(self, env: gym.Env):
+    def train(self, env: gym.Env, **kwargs):
         """
         Train the agent in the given environment.
 
