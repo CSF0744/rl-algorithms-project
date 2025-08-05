@@ -1,31 +1,19 @@
-# A2C and A3C Implementation in PyTorch (for discrete action spaces)
-# code from Chatgpt.
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.multiprocessing as mp
+# basic package
 import gymnasium as gym
 import numpy as np
 import time
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-# Shared Actor-Critic Network
-class ActorCritic(nn.Module):
-    def __init__(
-        self, 
-        state_dim: int, 
-        action_dim: int,
-        hidden_dim = 64
-        ):
-        super().__init__()
-        self.fc1 = nn.Linear(state_dim, hidden_dim)
-        self.actor = nn.Linear(hidden_dim, action_dim)
-        self.critic = nn.Linear(hidden_dim, 1)
+# NN package
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.multiprocessing as mp
 
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        return F.softmax(self.actor(x), dim=-1), self.critic(x)
+# Custom file
+from src.memory.buffer import A2C_buffer
+from src.networks.actor_critic_discrete import ActorCritic # actor critic with shared 1st layer
 
 
 # === A2C Trainer (Single Process Synchronous) ===

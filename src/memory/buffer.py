@@ -139,3 +139,76 @@ class PPO_buffer():
                 
     def __len__(self):
         return len(self.states)
+    
+class A2C_buffer():
+    # buffer for A2C algorithm to store transitions
+    def __init__(self, gamma: float = 0.99, lam: float = 0.95):
+        self.gamma = gamma
+        self.lam = lam
+        self.reset()
+    
+    def reset(self):
+        # reset the buffer to empty
+        self.states = []
+        self.actions = []
+        self.rewards = []
+        self.dones = []
+        self.values = []
+        self.log_probs = []
+        self.advantages = []
+        self.returns = []
+        
+    def push(self, state, action, reward, done, value, log_prob):
+        # Add a new transition to the buffer
+        self.states.append(state)
+        self.actions.append(action)
+        self.rewards.append(reward)
+        self.dones.append(done)
+        self.values.append(value)
+        self.log_probs.append(log_prob)
+
+    def compute_trajectory(self, end_value):
+        # compute advantages and returns for one trajectory using simple advantage
+        # append advantages and returns to buffer
+        returns = []
+        G = end_value
+        for t in reversed(range(len(self.rewards))):
+            G = self.rewards[t] + self.gamma * G * (1-self.dones[t])
+            returns.insert(0, G)
+            
+        self.returns.extend(returns)
+        advantages = [r - v for r, v in zip(returns, self.values)]
+        self.advantages.extend(advantages)
+    
+    def sample(self, batch_size: int, device: str = 'cpu'):
+        # Sampel a batch of transition from buffer
+        if len(self.states) < batch_size:
+            return None
+        
+        indices = np.arange(len(self.states))
+        np.random.shuffle(indices)
+        
+        states = torch.tensor(np.array(self.states), dtype=torch.float32, device=device)
+        actions = torch.tensor(self.actions, dtype=torch.float32, device=device)
+        returns = torch.tensor(self.returns, dtype=torch.float32, device=device)
+        advantages = torch.tensor(self.advantages, dtype=torch.float32, device=device)
+        log_probs = torch.tensor(self.log_probs, dtype=torch.float32, device=device)
+        
+        # normalize advantages to lower variance in batch
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        
+        for start in range(0, len(indices), batch_size):
+            end = start + batch_size
+            batch_idx = indices[start:end]
+            yield {
+                'states' : states[batch_idx],
+                'actions' : actions[batch_idx],
+                'returns' : returns[batch_idx],
+                'advantages' : advantages[batch_idx],
+                'log_probs' : log_probs[batch_idx]
+            }
+        
+        self.reset()  # Reset the buffer after sampling
+                
+    def __len__(self):
+        return len(self.states)

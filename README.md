@@ -83,7 +83,17 @@ This project includes implementations of various reinforcement learning algorith
 
 ## Performance
 
-Include figures of training performance.
+DQN, PPO and A2C performance in CartPole-v1 environment
+
+[DQN Reward Curve](/figure/dqn/train_reward.png)
+
+[PPO Reward Curve](/figure/ppo/train_reward.png)
+
+[A2C Reward Curve](/figure/a2c/train_reward.png)
+
+In Car2DEnv custom environment
+
+[DQN Reward Curve](/figure/dqn/car2denv-v0_train_reward.png)
 
 ## Environments
 

@@ -14,7 +14,7 @@ from torch import nn
 # Custom file
 from src.memory.buffer import ReplayBuffer
 from src.networks.q_net_discrete import QNetDiscrete
-from base import BaseAgent
+from .base import BaseAgent
     
 class DQN_Agent():
     def __init__(
@@ -204,9 +204,9 @@ class DQNAgent(BaseAgent):
         config: Dict[str, Any]
     ):  
         # Load parameters for agent
-        super.__init__(state_dim,action_dim,hidden_dim,config)
+        super().__init__(state_dim,action_dim,hidden_dim,config)
         self.lr = config.get('lr', 0.001)
-        self.gamma = config.get('gamma', 0,99)
+        self.gamma = config.get('gamma', 0.99)
         self.epsilon_start = config.get('epsilon_start', 0.5)
         self.epsilon_end = config.get('epsilon_end', 0.01)
         self.epsilon_decay = config.get('epsilon_decay', 1000)
@@ -230,7 +230,7 @@ class DQNAgent(BaseAgent):
         self.logger = []
         
 
-    def action_selection(self, state, epsilon: float, eval:bool=False, **kwargs):
+    def action_selection(self, state, eval:bool=False, **kwargs):
         """
         Select action based on epsilon greedy policy and whether in evaluation mode
 
@@ -243,6 +243,8 @@ class DQNAgent(BaseAgent):
             int : discrete action
             None
         """
+        epsilon = kwargs.get('epsilon', self.epsilon)
+        eval = kwargs.get('eval', False)
         if eval or np.random.rand() > epsilon:
             # return greedy if in evaluation or greater than epsilon
             with torch.no_grad():
@@ -318,7 +320,7 @@ class DQNAgent(BaseAgent):
             
             while not done:
                 # Select action using epsilon-greedy policy
-                action = self.action_selection(state, self.epsilon)
+                action, _ = self.action_selection(state, eval=False, epsilon=self.epsilon)
                 
                 # Take action in the environment
                 next_state, reward, terminated, truncated, info = env.step(action)
@@ -336,7 +338,7 @@ class DQNAgent(BaseAgent):
                 state = next_state
             avg_reward += total_reward
             # Decay epsilon after each episode
-            self.decay_epsilon(episode)
+            self.decay_epsilon()
             if episode % 10 == 0:
                 # Update target network every 10 episodes
                 self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -357,7 +359,9 @@ class DQNAgent(BaseAgent):
     def load_model(self, filepath):
         state_dict = torch.load(filepath, map_location=self.device, weights_only=True)
         self.policy_net.load_state_dict(state_dict)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
         self.policy_net.to(self.device)
+        self.target_net.to(self.device)
     
     def evaluate(self, env, num_episodes = 10, render = False):
         return super().evaluate(env, num_episodes, render)

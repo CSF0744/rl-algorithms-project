@@ -1,5 +1,26 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+class ActorCritic(nn.Module):
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        hidden_dim,
+        max_action
+    ):
+        super().__init__()
+        self.fc1 = nn.Linear(state_dim, hidden_dim)
+        self.actor = nn.Linear(hidden_dim, action_dim)
+        self.critic = nn.Linear(hidden_dim, 1)
+        self.max_action = max_action
+        
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x_a = F.relu(self.actor(x))
+        x_c = F.relu(self.critic(x))
+        return F.tanh(x_a) * self.max_action, 
 
 class Actor(nn.Module):
     """
