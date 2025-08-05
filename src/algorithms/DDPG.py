@@ -66,39 +66,39 @@ class DDPG_Agent():
             return
         
         for _ in range(epoches):
-            for batch in self.buffer.sample(batch_size, self.device, discrete=False):
-                states = batch['states']
-                actions = batch['actions']
-                rewards = batch['rewards']
-                next_states = batch['next_states']
-                dones = batch['dones']
-                
-                # critic update
-                q_values = self.critic(states, actions)
-                
-                with torch.no_grad():
-                    next_actions = self.actor_target(next_states)
-                    target_q_values = self.critic_target(next_states, next_actions)
-                    target_q_values = rewards + (1 - dones) * self.gamma * target_q_values
-                    
-                critic_loss = nn.MSELoss()(q_values, target_q_values)
-                self.critic_optimizer.zero_grad()
-                critic_loss.backward()
-                self.critic_optimizer.step()
-                
-                # actor update
-                actor_loss = -self.critic(states, self.actor(states)).mean()
-                self.actor_optimizer.zero_grad()
-                actor_loss.backward()
-                self.actor_optimizer.step()
-                
-                # softupdate parameters in target
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1-self.tau) * target_param.data)
-                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1-self.tau) * target_param.data)
+            batch = self.buffer.sample(batch_size, self.device, discrete=False)
+            states = batch['states']
+            actions = batch['actions']
+            rewards = batch['rewards']
+            next_states = batch['next_states']
+            dones = batch['dones']
+            
+            # critic update
+            q_values = self.critic(states, actions)
+            
+            with torch.no_grad():
+                next_actions = self.actor_target(next_states)
+                target_q_values = self.critic_target(next_states, next_actions)
+                target_q_values = rewards + (1 - dones) * self.gamma * target_q_values
+            
+            critic_loss = nn.MSELoss()(q_values, target_q_values)
+            self.critic_optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_optimizer.step()
+            
+            # actor update
+            actor_loss = -self.critic(states, self.actor(states)).mean()
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+            
+            # softupdate parameters in target
+            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1-self.tau) * target_param.data)
+            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1-self.tau) * target_param.data)
     
-    def train(self, env: gym.Env, noise_std):
+    def train(self, env: gym.Env, noise_std=0.1):
         avg_reward = 0
         for episode in tqdm(range(self.num_episodes)):
             state, info = env.reset()
@@ -125,7 +125,7 @@ class DDPG_Agent():
                 avg_reward /= 100
                 self.collect_performance(episode, avg_reward)
                 
-                tqdm.write(f"\nDDPG Episode {episode + 1}/{self.num_episodes}, Average Reward: {avg_reward}, Epsilon: {self.epsilon:.4f}")
+                tqdm.write(f"\nDDPG Episode {episode + 1}/{self.num_episodes}, Average Reward: {avg_reward}")
                 avg_reward = 0
         
         # Return success train status and final total reward        

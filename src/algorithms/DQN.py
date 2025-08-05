@@ -93,7 +93,7 @@ class DQN_Agent():
             q_values = self.policy_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
             
             with torch.no_grad():
-                next_q_values = self.target_net(next_states).max(1)[0]
+                next_q_values, _ = self.target_net(next_states).max(dim=1, keepdim=True)
                 target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
             
             loss = self.criterion(q_values, target_q_values)

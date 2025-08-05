@@ -1,6 +1,6 @@
 """
     Unittest file for testing RL algorithms agent function properly.
-    This file contains tests for DQN, PPO, and A2C agents.
+    This file contains tests for DQN, PPO, and A2C agents in discrete environment.
 """
 
 import unittest
@@ -12,7 +12,7 @@ from src.algorithms.PPO import PPO_Agent
 from src.algorithms.A3C import A2C_Agent
 
 
-class TestAlgorithms(unittest.TestCase):
+class TestAlgorithms_Discrete(unittest.TestCase):
     
     def set_up_hyperparameters(self):
         # Set up hyperparameters for each agent
@@ -43,7 +43,8 @@ class TestAlgorithms(unittest.TestCase):
             'gamma': 0.99,
             'batch_size': 4,
             'num_episodes': 8
-        }     
+        } 
+          
 
     def setUp(self):
         # Set up test environment 
@@ -77,6 +78,7 @@ class TestAlgorithms(unittest.TestCase):
             device=self.device
         )
         
+        
     def test_dqn_training(self):
         print('\n Testing DQN!')
         result = self.dqn.train(self.env)
@@ -97,11 +99,6 @@ class TestAlgorithms(unittest.TestCase):
         self.assertTrue(result['success'])
         print("\n A2C Test Pass!")
         # self.assertGreater(result['reward'], 0)
-    
-    def test_ddpg_training(self):
-        print('\n Testing DDPG!')
-        print('\n DDPG is still under work.')
-        print("\n DDPG Test Pass!")
 
     
 if __name__ == '__main__':

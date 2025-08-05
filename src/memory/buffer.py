@@ -31,15 +31,15 @@ class ReplayBuffer():
         states, actions, rewards, next_states, dones = zip(*batch)
         
         # Unpack entire buffer into separate arrays
-        states, actions, rewards, next_states, dones = zip(*self.buffer)
+        # states, actions, rewards, next_states, dones = zip(*self.buffer)
         
         actions_dtype = torch.int64 if discrete else torch.float32
         
         states = torch.tensor(np.array(states), dtype=torch.float32, device=device)
         actions = torch.tensor(np.array(actions), dtype=actions_dtype, device=device)
-        rewards = torch.tensor(np.array(rewards), dtype=torch.float32, device=device)# .unsqueeze(1)
+        rewards = torch.tensor(np.array(rewards), dtype=torch.float32, device=device).unsqueeze(1)
         next_states = torch.tensor(np.array(next_states), dtype=torch.float32, device=device)
-        dones = torch.tensor(np.array(dones), dtype=torch.float32, device=device) #.unsqueeze(1)
+        dones = torch.tensor(np.array(dones), dtype=torch.float32, device=device).unsqueeze(1)
         
         return {
             'states' : states,
