@@ -86,7 +86,7 @@ class SAC_Agent(BaseAgent):
                 
                 target_q1_values = self.critic1_target(next_states, next_actions)
                 target_q2_values = self.critic2_target(next_states, next_actions)
-                # min Q value from two networks and add - self.alpha * next_log_prob as entropy for exploration
+                # min Q value from two networks and add - self.alpha * next_log_prob as entropy for exploration?
                 target_q_values = torch.min(target_q1_values, target_q2_values) - self.alpha * next_log_prob
                 target_q_values = rewards + (1 - dones) * self.gamma * target_q_values
             
