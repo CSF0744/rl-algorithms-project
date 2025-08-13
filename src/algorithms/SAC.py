@@ -16,13 +16,13 @@ from src.networks.actor_critic_continuous import GaussianActor, Critic
 from .base import BaseAgent
 
 class SAC_Agent(BaseAgent):
-    def __init__(self, state_dim, action_dim, hidden_dim, config):
+    def __init__(self, state_dim, action_dim, max_action, hidden_dim, config):
         super().__init__(state_dim, action_dim, hidden_dim, config)
         self.actor_lr = config.get('actor_lr',0.001)
         self.critic_lr = config.get('critic_lr',0.001)
         self.gamma = config.get('gamma',0.99)
         self.tau = config.get('tau',0.99)
-        self.max_action = config.get('max_action',1)
+        self.max_action = max_action
         self.alpha = config.get('alpha',0.2)
         self.alpha_lr = config.get('alpha_lr', 0.001)
         
@@ -169,4 +169,5 @@ class SAC_Agent(BaseAgent):
         
     def evaluate(self, env, num_episodes = 10, render = False):
         return super().evaluate(env, num_episodes, render)
-    
+
+# End of SAC.py   

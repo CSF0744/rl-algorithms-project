@@ -309,3 +309,5 @@ def train_a3c(env_name="CartPole-v1"):
     workers = [A3CWorker(global_model, optimizer, env_name, global_ep) for _ in range(4)]
     [w.start() for w in workers]
     [w.join() for w in workers]
+
+# End of A3C.py

@@ -59,6 +59,7 @@ def main():
     action_dim = env.action_space.n
     hidden_dim = 64  # Example hidden dimension for the neural network
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # remember to append device info after config if using new modular agent api
     
     # initialize agent
     if args.algo == 'dqn':

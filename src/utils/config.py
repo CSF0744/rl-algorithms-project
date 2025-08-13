@@ -31,5 +31,27 @@ config = {
         'batch_size':64,
         'num_episodes' : 1000,
         'buffer_size':10000
+    },
+    "td3" : {
+        'actor_lr' : 0.001,
+        'critic_lr' :  0.001,
+        'gamma' : 0.99,
+        'tau' :  0.99,
+        'policy_noise': 0.2,
+        'noise_clip': 0.5,
+        'batch_size':64,
+        'num_episodes' : 1000,
+        'buffer_size':10000
+    },
+    "sac" : {
+        'actor_lr' : 0.001,
+        'critic_lr' :  0.001,
+        'gamma' : 0.99,
+        'tau' :  0.99,
+        'alpha': 0.2,
+        'alpha_lr': 0.001,
+        'batch_size':64,
+        'num_episodes' : 1000,
+        'buffer_size':10000
     }
 }

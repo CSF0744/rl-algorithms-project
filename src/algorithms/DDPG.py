@@ -297,3 +297,5 @@ class DDPGAgent(BaseAgent):
         
     def evaluate(self, env, num_episodes = 10, render = False):
         return super().evaluate(env, num_episodes, render)
+
+# End of DDPG.py

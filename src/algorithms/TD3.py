@@ -20,6 +20,7 @@ class TD3_Agent(BaseAgent):
         self, 
         state_dim, 
         action_dim,
+        max_action,
         hidden_dim, 
         config
     ):
@@ -28,7 +29,7 @@ class TD3_Agent(BaseAgent):
         self.critic_lr = config.get('critic_lr',0.001)
         self.gamma = config.get('gamma',0.99)
         self.tau = config.get('tau',0.99)
-        self.max_action = config.get('max_action',1)
+        self.max_action = max_action
         self.policy_noise = config.get('policy_noise',0)
         self.noise_clip = config.get('noise_clip', 0)
         
@@ -162,3 +163,5 @@ class TD3_Agent(BaseAgent):
         
     def evaluate(self, env, num_episodes = 10, render = False):
         return super().evaluate(env, num_episodes, render)
+
+# End of TD3.py
