@@ -20,7 +20,7 @@ class ActorCritic(nn.Module):
         x = F.relu(self.fc1(x))
         x_a = F.relu(self.actor(x))
         x_c = F.relu(self.critic(x))
-        return F.tanh(x_a) * self.max_action, 
+        return F.tanh(x_a) * self.max_action,  x_c
 
 class Actor(nn.Module):
     """

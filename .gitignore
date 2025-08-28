@@ -13,3 +13,6 @@ __pycache__/
 
 #
 todo.txt
+
+# pylint config (ignored)
+.pylintrc

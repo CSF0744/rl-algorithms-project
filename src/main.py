@@ -1,16 +1,16 @@
 import argparse
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
 import gymnasium as gym
-from algorithms import DQN_Agent, PPO_Agent, A2C_Agent
+from src.algorithms import DQN_Agent, PPO_Agent, A2C_Agent
 
-import environments
-from utils.config import config
-from utils.plotter import plot_training_results
-from utils.render_agent import render_trained_agent
+import src.environments
+from src.utils.config import config
+from src.utils.plotter import plot_training_results
+from src.utils.render_agent import render_trained_agent
 import torch
 
 def parse_args():
@@ -70,17 +70,23 @@ def main():
         agent = A2C_Agent(state_dim, action_dim, hidden_dim, algo_config, device)
     else:
         print('\nAgent not exist!')
-    # train agent 
+        return 0
+    
+    # train agent (in future should seperate train and evaluate into different scripts)
     agent.train(env)
     # save the model and plot training performance
     agent.save_model(os.path.join(model_dir,'model.pth'))
     plot_training_results(agent.logger, save_path=os.path.join(figure_dir,'train_reward.png'), title='Training Rewards Curve')
+    env.close()
     
     ## evaluate the agent
     env = gym.make(args.env, render_mode='human')
     agent.evaluate(env, num_episodes=10)
     # evalute agent with rendering
     render_trained_agent(agent, env, True)
+    env.close()
+    
+    return 0
 
 if __name__ == "__main__":
     main()

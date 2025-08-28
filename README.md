@@ -70,7 +70,7 @@ rl-algorithms-project
 
 To run the project, execute the `main.py` file:
 ```
-python src/main.py --algo dqn --env CartPole-v1 --num_episodes 1000
+python -m src.main --algo dqn --env CartPole-v1 --num_episodes 1000
 ```
 
 ## Algorithms
