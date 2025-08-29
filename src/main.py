@@ -5,12 +5,17 @@ import os
 
 import numpy as np
 import gymnasium as gym
-from src.algorithms import DQN_Agent, PPO_Agent, A2C_Agent
+from algorithms import DQN_Agent, PPO_Agent, A2C_Agent
 
 import src.environments
-from src.utils.config import config
-from src.utils.plotter import plot_training_results
-from src.utils.render_agent import render_trained_agent
+from utils import config
+from utils.plotter import plot_training_results
+from utils.render_agent import render_trained_agent
+
+# Alternatively, you can use the following import statements if you prefer absolute imports:
+# from src.utils.config import config
+# from src.utils.plotter import plot_training_results
+# from src.utils.render_agent import render_trained_agent
 import torch
 
 def parse_args():
